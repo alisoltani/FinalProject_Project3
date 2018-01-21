@@ -45,13 +45,17 @@ class WaypointUpdater(object):
         # TODO: Add other member variables you need below
         self.pose = None # vehicle pose
         self.traffic_id = None
-
+        
+        self.base_waypoints = [] # List of waypoints from base waypoints
 
         rospy.spin()
 
     def pose_cb(self, msg):
         # TODO: Implement
         self.pose = msg.pose
+        
+        if not self.base_waypoints:
+            rospy.logwarn("No base waypoints received")
         pass
 
     def waypoints_cb(self, waypoints):
