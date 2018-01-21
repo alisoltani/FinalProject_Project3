@@ -44,6 +44,7 @@ class WaypointUpdater(object):
 
         # TODO: Add other member variables you need below
         self.pose = None # vehicle pose
+        self.traffic_id = None
 
 
         rospy.spin()
@@ -55,10 +56,12 @@ class WaypointUpdater(object):
 
     def waypoints_cb(self, waypoints):
         # TODO: Implement
+        self.waypoints = waypoints
         pass
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
+        self.traffic_id = msg.data
         pass
 
     def obstacle_cb(self, msg):
