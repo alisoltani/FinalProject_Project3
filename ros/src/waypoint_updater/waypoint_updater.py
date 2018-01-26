@@ -24,44 +24,99 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 100 # Number of waypoints we will publish. You can change this number
 
 
 class WaypointUpdater(object):
     def __init__(self):
         rospy.init_node('waypoint_updater')
 
+	self.waypoints = [] # List of waypoints
+	self.final_waypoints = [] # List of the next waypoints for the car
+        self.pose = None # vehicle pose
+        self.traffic_id = None
+	self.next_waypoint_idx = None
+
+
         ## Subscribers
-        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)  
+
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
-        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb, queue_size=1, buff_size=512*1024)
+        rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
         rospy.Subscriber('/obstacle_waypoint', Int32, self.obstacle_cb)
 
         ## Publishers
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
-
-        # TODO: Add other member variables you need below
-        self.pose = None # vehicle pose
-        self.traffic_id = None
         
-        self.base_waypoints = [] # List of waypoints from base waypoints
-
+        
         rospy.spin()
 
     def pose_cb(self, msg):
         # TODO: Implement
-        self.pose = msg.pose
-        
-        if not self.base_waypoints:
-            rospy.logwarn("No base waypoints received")
-        pass
 
-    def waypoints_cb(self, waypoints):
+        if not self.waypoints:
+            rospy.logwarn("No base waypoints received")
+            return
+
+        self.pose = msg.pose
+
+	car_position = self.pose.position
+
+        self._get_next_waypoints(car_position)
+	self._publish_waypoints()
+
+    def _get_next_waypoints(self, car_position):
+	search_for_global_minima = False
+
+        if not self.next_waypoint_idx:
+	    search_for_global_minima = True
+	
+
+	search_for_global_minima = True
+
+	if search_for_global_minima:
+	    self.next_waypoint_idx = self._full_search_waypoints(car_position)
+	else:
+            return
+
+        self.final_waypoints = [self.waypoints[idx] for idx in range(self.next_waypoint_idx, self.next_waypoint_idx+LOOKAHEAD_WPS)]
+
+    def _publish_waypoints(self):
+        waypoint_msg = Lane()
+        waypoint_msg.waypoints = self.final_waypoints
+        self.final_waypoints_pub.publish(waypoint_msg)
+
+    def _full_search_waypoints(self, car_position):
+        min_dist = float("inf")
+        min_dist_idx = 0
+
+        dist = 0.0
+
+        for idx in range(len(self.waypoints)):
+	    waypoint_x = self.waypoints[idx].pose.pose.position.x
+	    waypoint_y = self.waypoints[idx].pose.pose.position.y
+
+            dist_x = car_position.x - waypoint_x
+	    dist_y = car_position.y - waypoint_y
+            dist = ((dist_x)*(dist_x) + (dist_y)*(dist_y))
+
+            if dist < min_dist:
+                min_dist = dist
+                min_dist_idx = idx
+
+        return min_dist_idx
+
+
+    def waypoints_cb(self, msg):
         # TODO: Implement
-        self.waypoints = waypoints
-        pass
+        # load all the of waypoints
+        if not self.waypoints:
+            self.waypoints = msg.waypoints
+            rospy.logwarn("Not a warning, received %d waypoints", len(msg.waypoints))
+	else:
+            rospy.logwarn("No waypoints!")
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
