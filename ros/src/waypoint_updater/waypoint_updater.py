@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 import rospy
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TwistStamped
 from styx_msgs.msg import Lane, Waypoint
 
 import numpy as np
 from std_msgs.msg import Int32
 
-import math
+import math, time
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -36,14 +36,14 @@ class WaypointUpdater(object):
         self.pose = None # vehicle pose
         self.traffic_id = None
 	self.next_waypoint_idx = None
+	self.timestamp_new = time.time()
 
 
         ## Subscribers
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)  
+        rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)  
 
-
-        # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
         rospy.Subscriber('/obstacle_waypoint', Int32, self.obstacle_cb)
 
@@ -62,24 +62,21 @@ class WaypointUpdater(object):
 
         self.pose = msg.pose
 
-	car_position = self.pose.position
-
-        self._get_next_waypoints(car_position)
+        self._get_next_waypoints(self.pose.position)
 	self._publish_waypoints()
 
     def _get_next_waypoints(self, car_position):
-	search_for_global_minima = False
 
         if not self.next_waypoint_idx:
-	    search_for_global_minima = True
-	
-
-	search_for_global_minima = True
-
-	if search_for_global_minima:
-	    self.next_waypoint_idx = self._full_search_waypoints(car_position)
+	    # rospy.logwarn("Doing a full search")
+	    self.next_waypoint_idx = self._search_waypoints(car_position, self.waypoints)
 	else:
-            return
+	    # rospy.logwarn("Searching next few waypoints")
+            waypoint_list = [self.waypoints[idx] for idx in range(self.next_waypoint_idx, self.next_waypoint_idx+20)]
+	    self.next_waypoint_idx += self._search_waypoints(car_position, waypoint_list)
+
+	#rospy.logwarn("current speed is %f", self.current_velocity.linear.x)
+	#rospy.logwarn("current delta_t is %f", self.delta_t)
 
         self.final_waypoints = [self.waypoints[idx] for idx in range(self.next_waypoint_idx, self.next_waypoint_idx+LOOKAHEAD_WPS)]
 
@@ -88,15 +85,15 @@ class WaypointUpdater(object):
         waypoint_msg.waypoints = self.final_waypoints
         self.final_waypoints_pub.publish(waypoint_msg)
 
-    def _full_search_waypoints(self, car_position):
+    def _search_waypoints(self, car_position, waypoint_list):
         min_dist = float("inf")
         min_dist_idx = 0
 
         dist = 0.0
 
-        for idx in range(len(self.waypoints)):
-	    waypoint_x = self.waypoints[idx].pose.pose.position.x
-	    waypoint_y = self.waypoints[idx].pose.pose.position.y
+        for idx in range(len(waypoint_list)):
+	    waypoint_x = waypoint_list[idx].pose.pose.position.x
+	    waypoint_y = waypoint_list[idx].pose.pose.position.y
 
             dist_x = car_position.x - waypoint_x
 	    dist_y = car_position.y - waypoint_y
@@ -105,6 +102,13 @@ class WaypointUpdater(object):
             if dist < min_dist:
                 min_dist = dist
                 min_dist_idx = idx
+        return min_dist_idx
+
+    def _local_search_waypoints(self, car_position):
+        min_dist = float("inf")
+        min_dist_idx = 0
+
+        dist = 0.0
 
         return min_dist_idx
 
@@ -118,10 +122,16 @@ class WaypointUpdater(object):
 	else:
             rospy.logwarn("No waypoints!")
 
+    def velocity_cb(self, msg):
+        # TODO: Callback for /current_velocity message. Implement
+        self.current_velocity = msg.twist
+	self.timestamp_old = self.timestamp_new
+	self.timestamp_new = time.time()
+	self.delta_t = self.timestamp_new - self.timestamp_old     
+
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
         self.traffic_id = msg.data
-        pass
 
     def obstacle_cb(self, msg):
         # TODO: Callback for /obstacle_waypoint message. We will implement it later
