@@ -54,6 +54,8 @@ class DBWNode(object):
                                          BrakeCmd, queue_size=1)
 
 	self.dbw_enabled = False
+	self.current_velocity = None
+	self.twist_cmd = None
 
         # TODO: Create `TwistController` object
         self.controller = Controller()
@@ -61,7 +63,7 @@ class DBWNode(object):
         # TODO: Subscribe to all the topics you need to
         rospy.Subscriber('/current_velocity', TwistStamped, self.current_velocity_cb)
         rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cmd_cb)
-	rospy.Subscriber('/dbw_enabled', Bool, self.dbw_enabled_cb)
+	rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
 
 
         self.loop()
@@ -71,14 +73,12 @@ class DBWNode(object):
         while not rospy.is_shutdown():
             # TODO: Get predicted throttle, brake, and steering using `twist_controller`
             # You should only publish the control commands if dbw is enabled
-            # throttle, brake, steering = self.controller.control(<proposed linear velocity>,
-            #                                                     <proposed angular velocity>,
-            #                                                     <current linear velocity>,
-            #                                                     <dbw status>,
-            #                                                     <any other argument you need>)
-            if self.dbw_enabled:
-              self.publish(throttle, brake, steer)
-            rate.sleep()
+	    if self.twist_cmd and self.current_velocity:
+                throttle, brake, steering = self.controller.control(self.twist_cmd.twist.linear, self.twist_cmd.twist.angular, self.current_velocity.twist.linear, self.dbw_enabled)
+	    
+                if self.dbw_enabled:
+                    self.publish(throttle, brake, steering)
+                rate.sleep()
 
     def publish(self, throttle, brake, steer):
         tcmd = ThrottleCmd()
@@ -105,6 +105,7 @@ class DBWNode(object):
         self.twist_cmd = msg
 
     def dbw_enabled_cb(self, msg):
+	rospy.logwarn("dbw status %s", msg)
         self.dbw_enabled = msg
 
 if __name__ == '__main__':
