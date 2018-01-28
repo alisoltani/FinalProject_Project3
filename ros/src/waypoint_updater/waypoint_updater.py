@@ -67,6 +67,7 @@ class WaypointUpdater(object):
         self.pose = msg.pose
 
 	if not self.dbw_enabled:
+	    # Do a full search if dbw is disabled
 	    self.next_waypoint_idx = None
 
         self._get_next_waypoints(self.pose.position)
