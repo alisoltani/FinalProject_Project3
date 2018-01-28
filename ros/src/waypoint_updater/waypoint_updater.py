@@ -3,6 +3,7 @@
 import rospy
 from geometry_msgs.msg import PoseStamped, TwistStamped
 from styx_msgs.msg import Lane, Waypoint
+from std_msgs.msg import Bool
 
 import numpy as np
 from std_msgs.msg import Int32
@@ -37,6 +38,7 @@ class WaypointUpdater(object):
         self.traffic_id = None
 	self.next_waypoint_idx = None
 	self.timestamp_new = time.time()
+	self.dbw_enabled = False
 
 
         ## Subscribers
@@ -46,6 +48,8 @@ class WaypointUpdater(object):
 
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
         rospy.Subscriber('/obstacle_waypoint', Int32, self.obstacle_cb)
+
+	rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
 
         ## Publishers
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
@@ -61,6 +65,9 @@ class WaypointUpdater(object):
             return
 
         self.pose = msg.pose
+
+	if not self.dbw_enabled:
+	    self.next_waypoint_idx = None
 
         self._get_next_waypoints(self.pose.position)
 	self._publish_waypoints()
@@ -150,6 +157,9 @@ class WaypointUpdater(object):
             dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
             wp1 = i
         return dist
+
+    def dbw_enabled_cb(self, msg):
+        self.dbw_enabled = msg
 
 
 if __name__ == '__main__':
