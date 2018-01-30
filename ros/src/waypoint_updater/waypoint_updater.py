@@ -93,7 +93,7 @@ class WaypointUpdater(object):
 	    if self.traffic_id < self.next_waypoint_idx + 100:
 		for idx in range(0,100):
                     vel = 0 + idx/20
-	            if vel < 1:
+	            if vel < 0.5:
                         vel = 0
                     self.set_waypoint_velocity(self.waypoints, self.traffic_id-idx, vel)
         else:
