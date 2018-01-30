@@ -71,6 +71,7 @@ class WaypointUpdater(object):
 	    self.next_waypoint_idx = None
 
         self._get_next_waypoints(self.pose.position)
+	self._check_traffic_light()
 	self._publish_waypoints()
 
     def _get_next_waypoints(self, car_position):
@@ -80,14 +81,27 @@ class WaypointUpdater(object):
 	    self.next_waypoint_idx = self._search_waypoints(car_position, self.waypoints)
 	else:
 	    # rospy.logwarn("Searching next few waypoints")
-            waypoint_list = [self.waypoints[idx] for idx in range(self.next_waypoint_idx, self.next_waypoint_idx+20)]
+            waypoint_list = [self.waypoints[idx] for idx in range(self.next_waypoint_idx, self.next_waypoint_idx+10)]
 	    self.next_waypoint_idx += self._search_waypoints(car_position, waypoint_list)
 
 	#rospy.logwarn("current speed is %f", self.current_velocity.linear.x)
 	#rospy.logwarn("current delta_t is %f", self.delta_t)
 
+    def _check_traffic_light(self):
+        if self.traffic_id > 0: # A red light is near
+            #rospy.logwarn("Traffic id is %d, and car is at %d", self.traffic_id, self.next_waypoint_idx)
+	    if self.traffic_id < self.next_waypoint_idx + 100:
+		for idx in range(0,100):
+                    vel = 0 + idx/20
+	            if vel < 1:
+                        vel = 0
+                    self.set_waypoint_velocity(self.waypoints, self.traffic_id-idx, vel)
+        else:
+            for idx in range(0,10):
+                    vel = 10
+                    self.set_waypoint_velocity(self.waypoints, self.next_waypoint_idx+idx, vel)
         self.final_waypoints = [self.waypoints[idx] for idx in range(self.next_waypoint_idx, self.next_waypoint_idx+LOOKAHEAD_WPS)]
-
+           
     def _publish_waypoints(self):
         waypoint_msg = Lane()
         waypoint_msg.waypoints = self.final_waypoints
