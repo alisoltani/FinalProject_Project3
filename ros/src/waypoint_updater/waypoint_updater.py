@@ -40,12 +40,14 @@ class WaypointUpdater(object):
 	self.timestamp_new = time.time()
 	self.dbw_enabled = False
 	self.reached_end = False
+        self.max_velocity = rospy.get_param('/waypoint_loader/velocity') / 3.6
+        self.printout = True
 
 
         ## Subscribers
         rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)  
-        rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb)  
+        rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb, queue_size=1, buff_size=512*1024)  
+        rospy.Subscriber('/current_velocity', TwistStamped, self.velocity_cb,  queue_size=1)  
 
         rospy.Subscriber('/traffic_waypoint', Int32, self.traffic_cb)
         rospy.Subscriber('/obstacle_waypoint', Int32, self.obstacle_cb)
@@ -102,21 +104,29 @@ class WaypointUpdater(object):
 
                     dist = self.distance(self.waypoints, self.traffic_id-idx-5, self.traffic_id-5)
 
-                    vel = dist*dist * 0.03 * 0.03
+                    vel = (dist/75)**2 
+                    # * (1-self.current_velocity.linear.x/(self.max_velocity*4))
 
-                    if vel > 10:
-                        vel = 4
-                    #vel = 0 + idx
+                    if vel > self.max_velocity:
+                        vel = self.max_velocity
+
+                    #if self.printout:
+                    #    rospy.logwarn("speed is %f and distance %f", vel, dist)
+
 	            if vel < 1 and dist < 15.:
                         vel = 0
                     else:
                         if vel < 1:
-                            vel = 0.8
+                            vel = 1
+
+                    #if self.printout:
+                    #    rospy.logwarn("speed is %f and distance %f", vel, dist)
 
                     self.set_waypoint_velocity(self.waypoints, self.traffic_id-idx-4, vel)
+                self.printout = False
         else:
             for idx in range(0,10):
-                vel = 10
+                vel = self.max_velocity
                 self.set_waypoint_velocity(self.waypoints, self.next_waypoint_idx+idx, vel)
 
         if (self.next_waypoint_idx+LOOKAHEAD_WPS < len(self.waypoints)) and not self.reached_end:
@@ -143,6 +153,7 @@ class WaypointUpdater(object):
 	        #rospy.logwarn("%f", vel)
 
                 self.set_waypoint_velocity(self.waypoints, len(self.waypoints)-idx-1, vel)
+
            
     def _publish_waypoints(self):
         waypoint_msg = Lane()
