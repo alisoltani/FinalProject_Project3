@@ -96,15 +96,15 @@ class WaypointUpdater(object):
 
         #if abs(self.traffic_id - self.next_waypoint_idx) < 4:
 	#    rospy.logwarn("Car is at the traffic light!")
-        stopping_wp_dist = 125
+        stopping_wp_dist = 150
         if self.traffic_id > 0: # A red light is near
             #rospy.logwarn("Traffic id is %d, and car is at %d", self.traffic_id, self.next_waypoint_idx)
-	    if self.traffic_id < self.next_waypoint_idx + stopping_wp_dist:
+	    if self.traffic_id + 5 < self.next_waypoint_idx + stopping_wp_dist:
 		for idx in range(0,stopping_wp_dist):
 
-                    dist = self.distance(self.waypoints, self.traffic_id-idx-5, self.traffic_id-5)
+                    dist = self.distance(self.waypoints, self.next_waypoint_idx + idx, self.traffic_id-5)
 
-                    vel = (dist/75)**2 
+                    vel = (dist/20)**2 
                     # * (1-self.current_velocity.linear.x/(self.max_velocity*4))
 
                     if vel > self.max_velocity:
@@ -113,16 +113,17 @@ class WaypointUpdater(object):
                     #if self.printout:
                     #    rospy.logwarn("speed is %f and distance %f", vel, dist)
 
-	            if vel < 1 and dist < 15.:
-                        vel = 0
-                    else:
-                        if vel < 1:
-                            vel = 1
+	            if vel < 0.5 and dist < 5.:
+                        vel = 0.
+                    #else:
+                    #    if vel < 1:
+                    #        rospy.logwarn(dist)
+                    #        vel = 2
 
                     #if self.printout:
                     #    rospy.logwarn("speed is %f and distance %f", vel, dist)
 
-                    self.set_waypoint_velocity(self.waypoints, self.traffic_id-idx-4, vel)
+                    self.set_waypoint_velocity(self.waypoints, self.next_waypoint_idx + idx, vel)
                 self.printout = False
         else:
             for idx in range(0,10):
