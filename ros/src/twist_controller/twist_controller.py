@@ -10,20 +10,20 @@ ONE_MPH = 0.44704
 class Controller(object):
     def __init__(self, *args, **kwargs):
         # TODO: Implement
-	self.throttle_kp = 0.75
-	self.throttle_ki = 0.1
-	self.throttle_kd = 0.05
+	self.throttle_kp = 0.5
+	self.throttle_ki = 0.15
+	self.throttle_kd = 0.2
 
 	self.steering_kp = 0.25
-	self.steering_ki = 0.01
-	self.steering_kd = 0.1
+	self.steering_ki = 0.
+	self.steering_kd = 0.2
 
 	self.min_speed = 0.0
 	
         self.throttle_controller = PID(self.throttle_kp, self.throttle_ki, self.throttle_kd)
 	self.steering_controller = PID(self.steering_kp, self.steering_ki, self.steering_kd)
 
-	self.steering_filter = LowPassFilter(0.25,0.1)
+	self.steering_filter = LowPassFilter(0.5,0.1)
 
         self.yaw_control = YawController(kwargs['wheel_base'], kwargs['steer_ratio'], self.min_speed , kwargs['max_lat_accel'], kwargs['max_steer_angle'])
 	
@@ -46,7 +46,7 @@ class Controller(object):
 	error = proposed_linear_vel - current_linear_vel
 
 	if error < 0:
-            brake = 10.0*abs(error)
+            brake = 5.0*abs(error)
  	    brake = max(brake, 1.0)
             throttle = 0.
 	else:

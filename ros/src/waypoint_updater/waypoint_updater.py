@@ -39,6 +39,7 @@ class WaypointUpdater(object):
 	self.next_waypoint_idx = None
 	self.timestamp_new = time.time()
 	self.dbw_enabled = False
+	self.reached_end = False
 
 
         ## Subscribers
@@ -75,32 +76,73 @@ class WaypointUpdater(object):
 	self._publish_waypoints()
 
     def _get_next_waypoints(self, car_position):
-
-        if not self.next_waypoint_idx:
-	    # rospy.logwarn("Doing a full search")
-	    self.next_waypoint_idx = self._search_waypoints(car_position, self.waypoints)
-	else:
-	    # rospy.logwarn("Searching next few waypoints")
-            waypoint_list = [self.waypoints[idx] for idx in range(self.next_waypoint_idx, self.next_waypoint_idx+10)]
-	    self.next_waypoint_idx += self._search_waypoints(car_position, waypoint_list)
+        min_dist = 0
+        if not self.reached_end:
+            if not self.next_waypoint_idx:
+	        # rospy.logwarn("Doing a full search")
+	        self.next_waypoint_idx, min_dist = self._search_waypoints(car_position, self.waypoints)
+	    else:
+	        # rospy.logwarn("Searching next few waypoints")
+                waypoint_list = [self.waypoints[idx] for idx in range(self.next_waypoint_idx, self.next_waypoint_idx+10)]
+                idx, min_dist = self._search_waypoints(car_position, waypoint_list)
+	        self.next_waypoint_idx += idx
 
 	#rospy.logwarn("current speed is %f", self.current_velocity.linear.x)
-	#rospy.logwarn("current delta_t is %f", self.delta_t)
+	#rospy.logwarn("current min_dist is %f", min_dist)
 
     def _check_traffic_light(self):
+
+        #if abs(self.traffic_id - self.next_waypoint_idx) < 4:
+	#    rospy.logwarn("Car is at the traffic light!")
+        stopping_wp_dist = 125
         if self.traffic_id > 0: # A red light is near
             #rospy.logwarn("Traffic id is %d, and car is at %d", self.traffic_id, self.next_waypoint_idx)
-	    if self.traffic_id < self.next_waypoint_idx + 100:
-		for idx in range(0,100):
-                    vel = 0 + idx/20
-	            if vel < 0.5:
+	    if self.traffic_id < self.next_waypoint_idx + stopping_wp_dist:
+		for idx in range(0,stopping_wp_dist):
+
+                    dist = self.distance(self.waypoints, self.traffic_id-idx-5, self.traffic_id-5)
+
+                    vel = dist*dist * 0.03 * 0.03
+
+                    if vel > 10:
+                        vel = 4
+                    #vel = 0 + idx
+	            if vel < 1 and dist < 15.:
                         vel = 0
-                    self.set_waypoint_velocity(self.waypoints, self.traffic_id-idx, vel)
+                    else:
+                        if vel < 1:
+                            vel = 0.8
+
+                    self.set_waypoint_velocity(self.waypoints, self.traffic_id-idx-4, vel)
         else:
             for idx in range(0,10):
-                    vel = 10
-                    self.set_waypoint_velocity(self.waypoints, self.next_waypoint_idx+idx, vel)
-        self.final_waypoints = [self.waypoints[idx] for idx in range(self.next_waypoint_idx, self.next_waypoint_idx+LOOKAHEAD_WPS)]
+                vel = 10
+                self.set_waypoint_velocity(self.waypoints, self.next_waypoint_idx+idx, vel)
+
+        if (self.next_waypoint_idx+LOOKAHEAD_WPS < len(self.waypoints)) and not self.reached_end:
+	    final_waypoint = self.next_waypoint_idx+LOOKAHEAD_WPS
+        else:
+            self.reached_end = True
+            final_waypoint = len(self.waypoints)
+
+	#if self.next_waypoint_idx < self.
+
+        self.final_waypoints = [self.waypoints[idx] for idx in range(self.next_waypoint_idx, final_waypoint)]
+
+        if self.reached_end:
+            for idx in range(0,150):
+                dist = self.distance(self.waypoints, len(self.waypoints)-idx-5, len(self.waypoints)-5)
+
+                vel = dist*dist * 0.01 * 0.01
+
+                if vel > 10:
+                   vel = 4
+
+                if vel < 1:
+                   vel = 0
+	        #rospy.logwarn("%f", vel)
+
+                self.set_waypoint_velocity(self.waypoints, len(self.waypoints)-idx-1, vel)
            
     def _publish_waypoints(self):
         waypoint_msg = Lane()
@@ -124,7 +166,7 @@ class WaypointUpdater(object):
             if dist < min_dist:
                 min_dist = dist
                 min_dist_idx = idx
-        return min_dist_idx
+        return min_dist_idx, dist
 
     def _local_search_waypoints(self, car_position):
         min_dist = float("inf")
