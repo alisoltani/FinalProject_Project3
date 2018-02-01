@@ -10,8 +10,8 @@ ONE_MPH = 0.44704
 class Controller(object):
     def __init__(self, *args, **kwargs):
         # TODO: Implement
-	self.throttle_kp = 0.75
-	self.throttle_ki = 0.05
+	self.throttle_kp = 0.7
+	self.throttle_ki = 0.15
 	self.throttle_kd = 0.25
 
 	self.steering_kp = 0.25
@@ -48,7 +48,7 @@ class Controller(object):
 
 	if error < 0:
             brake = 1.25*self.max_velocity*abs(error)
- 	    brake = max(brake, 1.0)
+ 	    #brake = max(brake, 1.0)
             throttle = 0.
 	else:
 	    brake = 0.

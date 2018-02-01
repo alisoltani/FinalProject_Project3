@@ -104,7 +104,7 @@ class WaypointUpdater(object):
 
                     dist = self.distance(self.waypoints, self.next_waypoint_idx + idx, self.traffic_id-5)
 
-                    vel = (dist/20)**2 
+                    vel = (dist/18)**2 
                     # * (1-self.current_velocity.linear.x/(self.max_velocity*4))
 
                     if vel > self.max_velocity:
@@ -113,8 +113,12 @@ class WaypointUpdater(object):
                     #if self.printout:
                     #    rospy.logwarn("speed is %f and distance %f", vel, dist)
 
-	            if vel < 0.5 and dist < 5.:
-                        vel = 0.
+	            if vel < 0.5:
+                        if dist < 10.:
+                            vel = vel/2
+                        else:
+                            if dist < 2.5:
+                                vel = 0
                     #else:
                     #    if vel < 1:
                     #        rospy.logwarn(dist)
@@ -147,7 +151,7 @@ class WaypointUpdater(object):
                 vel = dist*dist * 0.01 * 0.01
 
                 if vel > 10:
-                   vel = 4
+                   vel = 7
 
                 if vel < 1:
                    vel = 0
