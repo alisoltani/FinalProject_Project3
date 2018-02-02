@@ -172,9 +172,9 @@ class TLDetector(object):
 
         if light and (stop_line_index > car_position_idx):
             state = self.get_light_state(light)
-	    state = self.lights[light_idx].state
+	    state_ground_truth = self.lights[light_idx].state
 	    if state != self.light_state:
-                rospy.logwarn("light changed from %d to %d", self.light_state, state)
+                rospy.logwarn("light changed from %d to %d and ground truth is %d", self.light_state, state, state_ground_truth)
                 self.light_state = state
             return stop_line_index, self.light_state
 
