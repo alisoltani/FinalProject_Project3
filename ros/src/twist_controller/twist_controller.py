@@ -47,7 +47,7 @@ class Controller(object):
 	error = proposed_linear_vel - current_linear_vel
 
 	if error < 0:
-            brake = 1.25*self.max_velocity*abs(error)
+            brake = 1.35*self.max_velocity*abs(error)
  	    #brake = max(brake, 1.0)
             throttle = 0.
 	else:

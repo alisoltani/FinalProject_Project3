@@ -151,7 +151,7 @@ class WaypointUpdater(object):
                 vel = dist*dist * 0.01 * 0.01
 
                 if vel > 10:
-                   vel = 7
+                   vel = 8
 
                 if vel < 1:
                    vel = 0
