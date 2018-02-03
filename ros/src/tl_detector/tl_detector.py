@@ -171,11 +171,12 @@ class TLDetector(object):
             stop_line_waypoint = self.waypoints.waypoints[stop_line_index].pose.pose.position
 
         if light and (stop_line_index > car_position_idx):
-            state = self.get_light_state(light)
+            state, confidence = self.get_light_state(light)
 	    state_ground_truth = self.lights[light_idx].state
 	    if state != self.light_state:
-                rospy.logwarn("light changed from %d to %d and ground truth is %d", self.light_state, state, state_ground_truth)
                 self.light_state = state
+                rospy.logwarn("light changed from %d to %d (with confidence: %f) and ground truth is %d", self.light_state, state, confidence, state_ground_truth)
+
             return stop_line_index, self.light_state
 
         return -1, TrafficLight.UNKNOWN
