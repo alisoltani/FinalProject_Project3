@@ -70,6 +70,7 @@ There are still a couple of issues that need to be addressed for the car to move
 * The car tends to swing when braking at speeds close to zero, further parameter tweeking of the PID controller is needed. 
 * The object detection tends to lag and sometimes misses the changing traffic light.
 * The car is a bit jumpy at speeds close to zero. This was done on purpose to be able to steer the car when it swings.
+* Was not able to test the real-life images due to errors in the virual machine, so I have just submitted the project after it passes the simulator.
 
 ---
 
