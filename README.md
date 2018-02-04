@@ -71,7 +71,8 @@ There are still a couple of issues that need to be addressed for the car to move
 * The object detection tends to lag and sometimes misses the changing traffic light.
 * The car is a bit jumpy at speeds close to zero. This was done on purpose to be able to steer the car when it swings.
 
---
+---
+
 ### Installation
 
 * Be sure that your workstation is running Ubuntu 16.04 Xenial Xerus or Ubuntu 14.04 Trusty Tahir. [Ubuntu downloads can be found here](https://www.ubuntu.com/download/desktop).
