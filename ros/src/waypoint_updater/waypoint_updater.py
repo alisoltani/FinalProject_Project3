@@ -94,6 +94,9 @@ class WaypointUpdater(object):
 
     def _check_traffic_light(self):
 
+	if not self.next_waypoint_idx:
+	    return
+            
         #if abs(self.traffic_id - self.next_waypoint_idx) < 4:
 	#    rospy.logwarn("Car is at the traffic light!")
         stopping_wp_dist = 150
