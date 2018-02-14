@@ -1,6 +1,8 @@
 [video1]: results/video.mp4
 # System Integration Project for CARLA
 
+Ali Soltani, ali.soltani@icloud.com
+
 The goal of this project is the be able to implement self-driving functionality on a test track, given waypoints and sensor data, using ROS and Autoware. 
 
 ![Alt text](results/videogif.gif)
