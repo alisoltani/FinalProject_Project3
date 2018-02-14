@@ -175,7 +175,7 @@ class TLDetector(object):
 	    state_ground_truth = self.lights[light_idx].state
 	    if state != self.light_state:
                 self.light_state = state
-                rospy.logwarn("light changed from %d to %d (with confidence: %f) and ground truth is %d", self.light_state, state, confidence, state_ground_truth)
+                #rospy.logwarn("light changed from %d to %d (with confidence: %f) and ground truth is %d", self.light_state, state, confidence, state_ground_truth)
 
             return stop_line_index, self.light_state
 
