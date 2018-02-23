@@ -33,8 +33,11 @@ class Controller(object):
 	    self.last_sample_time = rospy.get_time()
             self.throttle_controller.reset()
 	    return 0., 0., 0.
-
-	sample_time = rospy.get_time() - self.last_sample_time
+	
+	if self.last_sample_time:
+	    sample_time = rospy.get_time() - self.last_sample_time
+	else:
+	    sample_time = rospy.get_time()
 
 	if proposed_linear_vel > self.max_velocity:
             proposed_linear_vel  = self.max_velocity
