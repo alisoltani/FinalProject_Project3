@@ -156,7 +156,7 @@ class TLDetector(object):
 	    # Find the car position from waypoint list
             car_position_idx = self.get_closest_waypoint(self.pose.pose.position, self.waypoints.waypoints)
 	    # Find the nearest traffic light to car from traffic light list
-	    light_idx = self.get_closest_waypoint(self.waypoints.waypoints[car_position_idx].pose.pose.position, self.lights)
+            light_idx = self.get_closest_waypoint(self.waypoints.waypoints[car_position_idx].pose.pose.position, self.lights)
         #TODO find the closest visible traffic light (if one exists)
             light_waypoint_idx = self.get_closest_waypoint(self.lights[light_idx].pose.pose.position, self.waypoints.waypoints)
 
