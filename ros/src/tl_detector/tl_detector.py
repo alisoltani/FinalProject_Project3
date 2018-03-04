@@ -23,7 +23,7 @@ class TLDetector(object):
         self.waypoints = None
         self.camera_image = None
         self.lights = []
-	self.light_state = 4
+        self.light_state = 4
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -130,8 +130,8 @@ class TLDetector(object):
             self.prev_light_loc = None
             return False, 0.
 	
-	if not self.light_classifier:
-	    return False, 0.
+        if isfunction(self.light_classifier):
+            return False, 0.
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
@@ -148,7 +148,7 @@ class TLDetector(object):
 
         """
         light = None
-	light_idx = None
+        light_idx = None
 
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
