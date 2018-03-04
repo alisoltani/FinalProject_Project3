@@ -130,7 +130,7 @@ class TLDetector(object):
             self.prev_light_loc = None
             return False, 0.
 	
-        if isfunction(self.light_classifier):
+        if callable(self.light_classifier):
             return False, 0.
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
