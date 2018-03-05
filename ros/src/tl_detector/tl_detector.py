@@ -51,6 +51,8 @@ class TLDetector(object):
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
         self.state_count = 0
+        
+        self.init = True
 
         rospy.spin()
 
@@ -71,9 +73,10 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
-        self.has_image = True
-        self.camera_image = msg
-        light_wp, state = self.process_traffic_lights()
+        if self.init:
+            self.has_image = True
+            self.camera_image = msg
+            light_wp, state = self.process_traffic_lights()
 
         '''
         Publish upcoming red lights at camera frequency.
