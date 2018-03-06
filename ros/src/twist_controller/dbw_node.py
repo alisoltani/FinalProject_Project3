@@ -48,7 +48,7 @@ class DBWNode(object):
         self.brake_pub = rospy.Publisher('/vehicle/brake_cmd',
                                          BrakeCmd, queue_size=1)
 
-	self.dbw_enabled = False
+	self.dbw_enabled = True
 	self.current_velocity = None
 	self.twist_cmd = None
 
