@@ -12,7 +12,7 @@ class TLClassifier(object):
     def __init__(self):
         self.session = None
         self.model_graph = None
-	self.tl_classes = {1: TrafficLight.RED, 2: TrafficLight.YELLOW, 3: TrafficLight.GREEN, 4: TrafficLight.UNKNOWN}
+        self.tl_classes = {1: TrafficLight.RED, 2: TrafficLight.YELLOW, 3: TrafficLight.GREEN, 4: TrafficLight.UNKNOWN}
 
         self.classifier_model_path = os.path.dirname(os.path.realpath(__file__)) + "/../model/tl_classifier.pb"
         self.load_model(self.classifier_model_path)
@@ -39,7 +39,7 @@ class TLClassifier(object):
             [detection_boxes, detection_confidence, detection_classes],
             feed_dict={image_tensor: np.expand_dims(image, axis=0)})
 	
-	boxes = np.squeeze(boxes)
+        boxes = np.squeeze(boxes)
         confidence = np.squeeze(confidence)
         classes = np.squeeze(classes)
         

@@ -23,7 +23,7 @@ class TLDetector(object):
         self.waypoints = None
         self.camera_image = None
         self.lights = []
-	self.light_state = 4
+        self.light_state = 4
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -51,6 +51,8 @@ class TLDetector(object):
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
         self.state_count = 0
+        
+        self.init = True
 
         rospy.spin()
 
@@ -71,9 +73,10 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
-        self.has_image = True
-        self.camera_image = msg
-        light_wp, state = self.process_traffic_lights()
+        if self.init:
+            self.has_image = True
+            self.camera_image = msg
+            light_wp, state = self.process_traffic_lights()
 
         '''
         Publish upcoming red lights at camera frequency.
@@ -130,13 +133,13 @@ class TLDetector(object):
             self.prev_light_loc = None
             return False, 0.
 	
-	if not self.light_classifier:
-	    return False, 0.
-
-        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
-
-        #Get classification
-        return self.light_classifier.get_classification(cv_image)
+        if hasattr(self, 'light_classifier'):
+            return False, 0.
+        else:
+            cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+            
+            #Get classification
+            return self.light_classifier.get_classification(cv_image)
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
@@ -148,39 +151,41 @@ class TLDetector(object):
 
         """
         light = None
-	light_idx = None
+        light_idx = None
+        light_waypoint_idx = None
 
         # List of positions that correspond to the line to stop in front of for a given intersection
         stop_line_positions = self.config['stop_line_positions']
-        if(self.pose):
+        if(self.pose) and (self.waypoints):
 	    # Find the car position from waypoint list
             car_position_idx = self.get_closest_waypoint(self.pose.pose.position, self.waypoints.waypoints)
 	    # Find the nearest traffic light to car from traffic light list
-	    light_idx = self.get_closest_waypoint(self.waypoints.waypoints[car_position_idx].pose.pose.position, self.lights)
+            light_idx = self.get_closest_waypoint(self.waypoints.waypoints[car_position_idx].pose.pose.position, self.lights)
         #TODO find the closest visible traffic light (if one exists)
             light_waypoint_idx = self.get_closest_waypoint(self.lights[light_idx].pose.pose.position, self.waypoints.waypoints)
 
 
-	    light_position = self.waypoints.waypoints[light_waypoint_idx].pose.pose.position
-	    light = self.lights[light_idx]
+            light_position = self.waypoints.waypoints[light_waypoint_idx].pose.pose.position
+            light = self.lights[light_idx]
 	    
-	    stop_light_line = self.config['stop_line_positions'][light_idx]
-	    stop_line = Waypoint()
+            stop_light_line = self.config['stop_line_positions'][light_idx]
+            stop_line = Waypoint()
             stop_line.pose.pose.position.x = stop_light_line[0]
-	    stop_line.pose.pose.position.y = stop_light_line[1]
-	    stop_line.pose.pose.position.z = 0.
+            stop_line.pose.pose.position.y = stop_light_line[1]
+            stop_line.pose.pose.position.z = 0.
 
-	    stop_line_index = self.get_closest_waypoint(stop_line.pose.pose.position, self.waypoints.waypoints)
+            stop_line_index = self.get_closest_waypoint(stop_line.pose.pose.position, self.waypoints.waypoints)
             stop_line_waypoint = self.waypoints.waypoints[stop_line_index].pose.pose.position
 
         if light and (stop_line_index > car_position_idx):
             state, confidence = self.get_light_state(light)
-	    state_ground_truth = self.lights[light_idx].state
-	    if state != self.light_state:
+            state_ground_truth = self.lights[light_idx].state
+            
+            if state != self.light_state:
                 self.light_state = state
                 #rospy.logwarn("light changed from %d to %d (with confidence: %f) and ground truth is %d", self.light_state, state, confidence, state_ground_truth)
 
-            return stop_line_index, self.light_state
+                return stop_line_index, self.light_state
 
         return -1, TrafficLight.UNKNOWN
 
