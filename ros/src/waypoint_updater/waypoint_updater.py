@@ -42,6 +42,7 @@ class WaypointUpdater(object):
         self.reached_end = False
         self.max_velocity = rospy.get_param('/waypoint_loader/velocity') / 3.6
         self.printout = True
+        self.init = False
 
 
         ## Subscribers
@@ -69,13 +70,16 @@ class WaypointUpdater(object):
 
         self.pose = msg.pose
 
-	if not self.dbw_enabled:
-	    # Do a full search if dbw is disabled
-	    self.next_waypoint_idx = None
+        if not self.init:
+            # Do a full search if dbw is disabled
+            self.next_waypoint_idx = None
 
-        self._get_next_waypoints(self.pose.position)
-        self._check_traffic_light()
-        self._publish_waypoints()
+            self._get_next_waypoints(self.pose.position)
+            self._check_traffic_light()
+            self._publish_waypoints()
+            self.init = True
+        
+        
 
     def _get_next_waypoints(self, car_position):
         min_dist = 0
